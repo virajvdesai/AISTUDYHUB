@@ -1,7 +1,11 @@
 /* =========================================
    AI STUDYHUB — PREMIUM COURSE PAGE FIX
    ========================================= */
-
+:root {
+  --premium-violet: #5b4ee8;
+  --premium-violet-dark: #4938d1;
+  --premium-muted: #6b7280;
+}
 .premium-course-page {
   --premium-violet: #5b4ee8;
   --premium-violet-dark: #4938d1;
