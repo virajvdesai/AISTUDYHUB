@@ -607,3 +607,150 @@
   justify-content: space-between;
   align-items: flex-end;
 }
+
+
+/* =========================================
+   CERTIFICATE PDF - STANDALONE CSS
+   ========================================= */
+
+.course-certificate {
+  width: 1123px !important;
+  min-width: 1123px !important;
+  height: 794px !important;
+  min-height: 794px !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 18px !important;
+  box-sizing: border-box !important;
+
+  background: #ffffff !important;
+  border: 4px solid #635bdb !important;
+  box-shadow: none !important;
+
+  color: #28204f !important;
+  font-family: Arial, sans-serif !important;
+  text-align: center !important;
+  overflow: hidden !important;
+}
+
+.course-certificate *,
+.course-certificate *::before,
+.course-certificate *::after {
+  box-sizing: border-box !important;
+}
+
+.course-certificate .certificate-inner-border {
+  width: 100%;
+  height: 100%;
+  padding: 55px 65px !important;
+  border: 2px solid #c7bfff !important;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.course-certificate .certificate-brand {
+  margin-bottom: 22px !important;
+  color: #635bdb !important;
+  font-size: 19px !important;
+  font-weight: 800 !important;
+  letter-spacing: 5px !important;
+}
+
+.course-certificate .certificate-overline {
+  color: #6b5bd2 !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  letter-spacing: 4px !important;
+}
+
+.course-certificate h2 {
+  margin: 18px 0 !important;
+  color: #28204f !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: 58px !important;
+  font-weight: 500 !important;
+}
+
+.course-certificate .certificate-intro,
+.course-certificate .certificate-description {
+  margin: 8px 0 !important;
+  color: #77738b !important;
+  font-size: 18px !important;
+  line-height: 1.6 !important;
+}
+
+.course-certificate .certificate-student {
+  width: 75%;
+  margin: 24px 0 !important;
+  padding-bottom: 12px !important;
+
+  color: #4c3db4 !important;
+  border-bottom: 2px solid #d9d2ff !important;
+
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: 42px !important;
+  font-weight: 700 !important;
+}
+
+.course-certificate .certificate-course-title {
+  margin: 18px 0 !important;
+  color: #28204f !important;
+  font-size: 30px !important;
+  line-height: 1.4 !important;
+}
+
+.course-certificate .certificate-date {
+  margin-top: 18px !important;
+  color: #77738b !important;
+  font-size: 16px !important;
+}
+
+.course-certificate .certificate-bottom {
+  width: 100%;
+  margin-top: 35px !important;
+
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: flex-end !important;
+}
+
+.course-certificate .certificate-seal {
+  width: 65px !important;
+  height: 65px !important;
+
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+
+  color: #635bdb !important;
+  border: 3px solid #8b7cf6 !important;
+  border-radius: 50% !important;
+
+  font-size: 32px !important;
+  font-weight: 800 !important;
+}
+
+.course-certificate .certificate-signature {
+  min-width: 180px;
+  padding-top: 10px !important;
+  border-top: 2px solid #a99df5 !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+  color: #28204f !important;
+}
+
+.course-certificate .certificate-signature span {
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: 21px !important;
+  font-weight: 700 !important;
+}
+
+.course-certificate .certificate-signature small {
+  margin-top: 5px;
+  color: #77738b !important;
+  font-size: 13px !important;
+}
