@@ -567,3 +567,43 @@
     min-width: 320px;
   }
 }
+
+/* Certificate PDF rendering */
+.premium-course-page .course-certificate.certificate-pdf {
+  box-sizing: border-box;
+  width: 1120px !important;
+  max-width: none !important;
+  min-height: 790px;
+  margin: 0;
+  padding: 28px;
+  background: #ffffff !important;
+  border: 3px solid #6d5be8 !important;
+  box-shadow: none !important;
+  text-align: center;
+  color: #28204f;
+}
+
+.premium-course-page .certificate-pdf .certificate-inner-border {
+  box-sizing: border-box;
+  min-height: 728px;
+  padding: 55px 48px;
+  border: 1px solid #c7bfff;
+}
+
+.premium-course-page .certificate-pdf h2 {
+  font-size: 58px;
+}
+
+.premium-course-page .certificate-pdf .certificate-student {
+  font-size: 40px;
+}
+
+.premium-course-page .certificate-pdf .certificate-course-title {
+  font-size: 30px;
+}
+
+.premium-course-page .certificate-pdf .certificate-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}

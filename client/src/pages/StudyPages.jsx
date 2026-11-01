@@ -700,13 +700,25 @@ const downloadCertificate = async () => {
       },
 
       html2canvas: {
-        scale: 3,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-        scrollX: 0,
-        scrollY: 0,
-      },
+  scale: 2,
+  useCORS: true,
+  backgroundColor: "#ffffff",
+  logging: false,
+  scrollX: 0,
+  scrollY: 0,
+  windowWidth: 1200,
+  onclone: (clonedDocument) => {
+    const certificate = clonedDocument.querySelector(
+      ".certificate-pdf"
+    );
+
+    if (certificate) {
+      certificate.style.width = "1120px";
+      certificate.style.maxWidth = "none";
+      certificate.style.margin = "0";
+    }
+  },
+},
 
       jsPDF: {
         unit: "mm",
@@ -1008,9 +1020,9 @@ const downloadCertificate = async () => {
               <p>Your certificate is ready. You can print it or save it as a PDF.</p>
             </div>
           </div>
-          <article
+        <article
   ref={certificateRef}
-  className="course-certificate"
+  className="course-certificate certificate-pdf"
   aria-label="Course completion certificate"
 >
             <div className="certificate-inner-border">
