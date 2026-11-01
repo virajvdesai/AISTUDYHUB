@@ -708,29 +708,51 @@ const downloadCertificate = async () => {
   scrollY: 0,
   windowWidth: 1200,
 
-  onclone: (clonedDocument) => {
-    const certificate = clonedDocument.querySelector(
-      ".course-certificate"
-    );
+  
+onclone: (clonedDocument) => {
+  const original = certificateRef.current;
+  const cloned = clonedDocument.querySelector(".course-certificate");
 
-    if (!certificate) return;
+  if (!original || !cloned) {
+    throw new Error("Certificate element not found");
+  }
 
-    const wrapper = clonedDocument.createElement("div");
-    wrapper.className = "premium-course-page";
+  // Copy the actual computed CSS from the live certificate
+  const originalElements = [
+    original,
+    ...original.querySelectorAll("*"),
+  ];
 
-    certificate.parentNode.insertBefore(wrapper, certificate);
-    wrapper.appendChild(certificate);
+  const clonedElements = [
+    cloned,
+    ...cloned.querySelectorAll("*"),
+  ];
 
-    wrapper.style.width = "1200px";
-    wrapper.style.maxWidth = "none";
-    wrapper.style.padding = "0";
-    wrapper.style.margin = "0";
-    wrapper.style.background = "#ffffff";
+  originalElements.forEach((element, index) => {
+    const clonedElement = clonedElements[index];
 
-    certificate.style.width = "1120px";
-    certificate.style.maxWidth = "none";
-    certificate.style.margin = "0";
-  },
+    if (!clonedElement) return;
+
+    const computed = window.getComputedStyle(element);
+
+    for (const property of computed) {
+      clonedElement.style.setProperty(
+        property,
+        computed.getPropertyValue(property),
+        "important"
+      );
+    }
+  });
+
+  // Force a landscape certificate layout
+  cloned.style.setProperty("width", "1120px", "important");
+  cloned.style.setProperty("height", "794px", "important");
+  cloned.style.setProperty("max-width", "none", "important");
+  cloned.style.setProperty("margin", "0", "important");
+  cloned.style.setProperty("background", "#ffffff", "important");
+  cloned.style.setProperty("overflow", "hidden", "important");
+},
+
 },
 
       jsPDF: {
