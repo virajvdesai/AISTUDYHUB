@@ -699,7 +699,7 @@ const downloadCertificate = async () => {
         quality: 1,
       },
 
-      html2canvas: {
+  html2canvas: {
   scale: 2,
   useCORS: true,
   backgroundColor: "#ffffff",
@@ -707,16 +707,29 @@ const downloadCertificate = async () => {
   scrollX: 0,
   scrollY: 0,
   windowWidth: 1200,
+
   onclone: (clonedDocument) => {
     const certificate = clonedDocument.querySelector(
-      ".certificate-pdf"
+      ".course-certificate"
     );
 
-    if (certificate) {
-      certificate.style.width = "1120px";
-      certificate.style.maxWidth = "none";
-      certificate.style.margin = "0";
-    }
+    if (!certificate) return;
+
+    const wrapper = clonedDocument.createElement("div");
+    wrapper.className = "premium-course-page";
+
+    certificate.parentNode.insertBefore(wrapper, certificate);
+    wrapper.appendChild(certificate);
+
+    wrapper.style.width = "1200px";
+    wrapper.style.maxWidth = "none";
+    wrapper.style.padding = "0";
+    wrapper.style.margin = "0";
+    wrapper.style.background = "#ffffff";
+
+    certificate.style.width = "1120px";
+    certificate.style.maxWidth = "none";
+    certificate.style.margin = "0";
   },
 },
 
@@ -2161,4 +2174,335 @@ export function Progress() {
 
 
 
- 
+ export function Settings() {
+  const user = getUser();
+
+  const [settings, setSettings] = useUserState("studyhubSettings", {
+    notifications: true,
+    compactMode: false,
+  });
+  const [name, setName] = useState(user.name || "");
+  const [saved, setSaved] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [pw, setPw] = useState({ current: "", next: "", confirm: "" });
+  const [pwMessage, setPwMessage] = useState({ type: "", text: "" });
+  const [photo, setPhoto] = useState(user.profilePicture || "");
+  const [uploading, setUploading] = useState(false);
+  const [photoMessage, setPhotoMessage] = useState("");
+    useEffect(() => {
+    apiRequest("/api/users/me")
+      .then((data) => {
+        if (!data.user) return;
+        setPhoto(data.user.profilePicture || "");
+        setName(data.user.name || "");
+      updateCurrentUser({ ...getUser(), ...data.user });
+      })
+      .catch(() => {});
+  }, []);
+
+  const save = async () => {
+    const cleanName = name.trim() || user.name;
+    setProfileError("");
+    setSaved(false);
+
+    try {
+      const data = await apiRequest("/api/users/me", {
+        method: "PATCH",
+        body: JSON.stringify({
+          name: cleanName,
+          profilePicture: photo,
+        }),
+      });
+
+      const updatedUser = {
+        ...user,
+        ...(data.user || {}),
+        name: cleanName,
+        profilePicture: photo,
+      };
+
+     updateCurrentUser(updatedUser);
+     setSaved(true);
+      setTimeout(() => setSaved(false), 1600);
+    } catch (error) {
+      setProfileError(error.message || "Could not save profile.");
+    }
+  };
+
+  const uploadPhoto = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setPhotoMessage("Choose a JPG, PNG, or WEBP image.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoMessage("Image must be smaller than 5 MB.");
+      event.target.value = "";
+      return;
+    }
+
+    setUploading(true);
+    setPhotoMessage("");
+
+    try {
+      const form = new FormData();
+      form.append("image", file);
+
+      const result = await apiRequest("/api/uploads", {
+        method: "POST",
+        body: form,
+      });
+
+      if (!result.image?.url) {
+        throw new Error("The server did not return an image URL.");
+      }
+
+      setPhoto(result.image.url);
+      setPhotoMessage("Image uploaded. Click Save changes to save your profile.");
+    } catch (error) {
+      setPhotoMessage(error.message || "Image upload failed.");
+    } finally {
+      setUploading(false);
+      event.target.value = "";
+    }
+  };
+
+  const changePassword = async () => {
+    if (!pw.current || !pw.next) {
+      return setPwMessage({
+        type: "err",
+        text: "Fill in your current and new password.",
+      });
+    }
+
+    if (pw.next.length < 6) {
+      return setPwMessage({
+        type: "err",
+        text: "New password must be at least 6 characters.",
+      });
+    }
+
+    if (pw.next !== pw.confirm) {
+      return setPwMessage({
+        type: "err",
+        text: "New passwords do not match.",
+      });
+    }
+
+    try {
+      await apiRequest("/api/users/me/password", {
+        method: "PATCH",
+        body: JSON.stringify({
+          currentPassword: pw.current,
+          newPassword: pw.next,
+        }),
+      });
+
+      setPw({ current: "", next: "", confirm: "" });
+      setPwMessage({
+        type: "ok",
+        text: "Password updated successfully.",
+      });
+    } catch (error) {
+      setPwMessage({
+        type: "err",
+        text: error.message || "Could not update password.",
+      });
+    }
+  };
+
+  const clearMyData = async () => {
+    if (!window.confirm("Clear your chat, flashcards, planner and quiz history?")) {
+      return;
+    }
+
+    try {
+      await clearUserData();
+      window.location.reload();
+    } catch (error) {
+      setProfileError(error.message || "Could not clear study data.");
+    }
+  };
+
+  return (
+    <Layout title="Settings" subtitle="Account and preferences">
+      <PageIntro
+        eyebrow="ACCOUNT"
+        title="Settings"
+        text="Manage your profile, password and preferences."
+      />
+
+      <div className="settings-grid">
+        <section className="app-card">
+          <div className="card-head">
+            <div>
+              <span>PROFILE</span>
+              <h2>Personal information</h2>
+            </div>
+          </div>
+
+          <div className="setting-field">
+            <span>Profile picture</span>
+            {photo ? (
+              <img
+                src={photo}
+                alt="Profile"
+                onError={() =>
+                  setPhotoMessage(
+                    "Could not display the image. Check that the image URL is accessible."
+                  )
+                }
+                style={{
+                  width: 110,
+                  height: 110,
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  display: "block",
+                  margin: "12px 0",
+                  border: "2px solid #ddd",
+                }}
+              />
+            ) : (
+              <div
+                aria-label="No profile picture selected"
+                style={{
+                  width: 110,
+                  height: 110,
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "12px 0",
+                  background: "#eee",
+                  color: "#555",
+                  fontSize: 36,
+                }}
+              >
+                {(name || user.name || "S").charAt(0).toUpperCase()}
+              </div>
+            )}
+
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              disabled={uploading}
+              onChange={uploadPhoto}
+            />
+            {uploading && <p>Uploading image...</p>}
+            {photoMessage && <p className="form-message">{photoMessage}</p>}
+          </div>
+
+          <label className="setting-field">
+            <span>Full name</span>
+            <input value={name} onChange={(event) => setName(event.target.value)} />
+          </label>
+
+          <label className="setting-field">
+            <span>Email</span>
+            <input value={user.email} disabled />
+          </label>
+
+          <label className="setting-field">
+            <span>Role</span>
+            <input value={user.role} disabled />
+          </label>
+
+          <button className="primary-btn" onClick={save} disabled={uploading}>
+            {saved ? "Saved Γ£ô" : "Save changes"}
+          </button>
+          {profileError && <p className="form-message err">{profileError}</p>}
+        </section>
+
+        <section className="app-card">
+          <div className="card-head">
+            <div>
+              <span>SECURITY</span>
+              <h2>Change password</h2>
+            </div>
+          </div>
+
+          <label className="setting-field">
+            <span>Current password</span>
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={pw.current}
+              onChange={(event) => setPw({ ...pw, current: event.target.value })}
+            />
+          </label>
+
+          <label className="setting-field">
+            <span>New password</span>
+            <input
+              type="password"
+              autoComplete="new-password"
+              value={pw.next}
+              onChange={(event) => setPw({ ...pw, next: event.target.value })}
+            />
+          </label>
+
+          <label className="setting-field">
+            <span>Confirm new password</span>
+            <input
+              type="password"
+              autoComplete="new-password"
+              value={pw.confirm}
+              onChange={(event) => setPw({ ...pw, confirm: event.target.value })}
+            />
+          </label>
+
+          <button className="primary-btn" onClick={changePassword}>
+            Update password
+          </button>
+          {pwMessage.text && (
+            <p className={`form-message ${pwMessage.type}`}>{pwMessage.text}</p>
+          )}
+        </section>
+
+        <section className="app-card">
+          <div className="card-head">
+            <div>
+              <span>PREFERENCES</span>
+              <h2>Experience</h2>
+            </div>
+          </div>
+
+          <Toggle
+            label="Study reminders"
+            checked={settings.notifications}
+            onChange={() =>
+              setSettings({
+                ...settings,
+                notifications: !settings.notifications,
+              })
+            }
+          />
+          <Toggle
+            label="Compact interface"
+            checked={settings.compactMode}
+            onChange={() =>
+              setSettings({
+                ...settings,
+                compactMode: !settings.compactMode,
+              })
+            }
+          />
+
+          <div className="danger-zone">
+            <strong>My study data</strong>
+            <p>
+              Delete the chat, flashcards, planner and quiz history stored for this account.
+            </p>
+            <button className="danger-btn" onClick={clearMyData}>
+              Clear my data
+            </button>
+          </div>
+        </section>
+      </div>
+    </Layout>
+  );
+}
