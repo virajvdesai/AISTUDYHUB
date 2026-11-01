@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { EmptyState, Layout, PageIntro, Toggle } from "../components/Layout";
-import html2pdf from "html2pdf.js";
 import {
   ResponsiveContainer,
   BarChart,
@@ -681,45 +680,17 @@ export function PremiumCourseViewer() {
   const [searchParams] = useSearchParams();
   const courseId = searchParams.get("id");
 
-  const downloadCertificate = async () => {
-  if (!certificateRef.current || downloading) return;
+const downloadCertificate = () => {
+  const previousTitle = document.title;
 
-  setDownloading(true);
+  // Chrome uses the page title as the default PDF file name.
+  document.title = `AI-StudyHub-${course.title.replace(/[^a-z0-9]/gi, "-")}-Certificate`;
 
-  try {
-    const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
-      import("html2canvas"),
-      import("jspdf"),
-    ]);
+  window.print();
 
-    // Capture the certificate where it is, so all page CSS still applies.
-    const canvas = await html2canvas(certificateRef.current, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#ffffff",
-      scrollX: 0,
-      scrollY: -window.scrollY,
-    });
-
-    const image = canvas.toDataURL("image/jpeg", 0.98);
-
-    const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-
-    // Fit the certificate on one page, keeping its proportions.
-    const ratio = Math.min(pageW / canvas.width, pageH / canvas.height);
-    const w = canvas.width * ratio;
-    const h = canvas.height * ratio;
-
-    pdf.addImage(image, "JPEG", (pageW - w) / 2, (pageH - h) / 2, w, h);
-    pdf.save(`AI-StudyHub-${course.title.replace(/[^a-z0-9]/gi, "-")}-Certificate.pdf`);
-  } catch (error) {
-    console.error("Certificate PDF error:", error);
-    window.alert("Could not download certificate. Please try again.");
-  } finally {
-    setDownloading(false);
-  }
+  setTimeout(() => {
+    document.title = previousTitle;
+  }, 1000);
 };
 
   const courseInfo = {
