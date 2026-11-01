@@ -1,4 +1,3 @@
-
 require("dotenv").config();
 
 const express = require("express");
@@ -26,9 +25,11 @@ const PORT = process.env.PORT || 5000;
 // CORS CONFIGURATION
 // --------------------------------------------------
 
+// Exact origins: your production Vercel URL (CLIENT_URL on Render) + local dev.
+// CLIENT_URL must be a bare origin, e.g. https://your-app.vercel.app (no trailing slash).
 const allowedOrigins = new Set(
   [
-    process.env.CLIENT_URL,
+    (process.env.CLIENT_URL || "").replace(/\/$/, ""),
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:5174",
@@ -36,21 +37,34 @@ const allowedOrigins = new Set(
   ].filter(Boolean)
 );
 
+// Vercel preview deployments for this project, e.g.
+// https://aistudyhub-q07yhcdf8-virajdesai6211-2158.vercel.app
+const vercelPreviewPattern =
+  /^https:\/\/aistudyhub[a-z0-9-]*-virajdesai6211-2158\.vercel\.app$/;
+
+const localDevPattern = /^http:\/\/(localhost|127\.0\.0\.1):\d+$/;
+
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.has(origin)) {
+      // No Origin header: server-to-server calls, curl, Postman, health checks.
+      if (!origin) return callback(null, true);
+
+      if (
+        allowedOrigins.has(origin) ||
+        localDevPattern.test(origin) ||
+        vercelPreviewPattern.test(origin)
+      ) {
         return callback(null, true);
       }
 
-      // Allow other local development ports.
-      if (/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) {
-        return callback(null, true);
-      }
-
-      return callback(new Error("CORS origin not allowed"));
+      // Reject cleanly (no CORS headers) instead of throwing an error.
+      console.warn(`CORS blocked origin: ${origin}`);
+      return callback(null, false);
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
@@ -59,10 +73,7 @@ app.use(
 // --------------------------------------------------
 
 // Make uploaded images accessible from /uploads/<filename>
-app.use(
-  "/uploads",
-  express.static(path.join(__dirname, "uploads"))
-);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // --------------------------------------------------
 // REQUEST BODY PARSING
@@ -104,19 +115,21 @@ app.get("/api/health/db", (req, res) => {
 // --------------------------------------------------
 // API ROUTES
 // --------------------------------------------------
+
 app.use("/api/ai", require("./routes/aiRoutes"));
+
 // Upload route uses Multer to process multipart/form-data.
 app.use("/api/uploads", uploadRoutes);
 
+// More specific /api/auth/* routes first, then the general auth routes.
+app.use("/api/auth/otp", otpRoutes);
+app.use("/api/auth/password-reset", passwordResetRoutes);
 app.use("/api/auth", authRoutes);
+
 app.use("/api/data", dataRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/payments", require("./routes/paymentRoutes"));
-app.use("/api/chatbot", chatbotRoutes);
-app.use("/api/auth/otp", otpRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/auth/password-reset", passwordResetRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/chatbot", chatbotRoutes);
 
 // --------------------------------------------------
 // SEED DEMO USERS
@@ -145,15 +158,10 @@ async function seedDemoUsers() {
   ];
 
   for (const demo of demos) {
-    const exists = await User.findOne({
-      email: demo.email,
-    });
+    const exists = await User.findOne({ email: demo.email });
 
     if (!exists) {
-      const password = await bcrypt.hash(
-        demo.password,
-        12
-      );
+      const password = await bcrypt.hash(demo.password, 12);
 
       await User.create({
         ...demo,
@@ -173,6 +181,7 @@ async function seedDemoUsers() {
 async function seedStudyData() {
   const teacherEmail = "teacher@studyhub.com";
   const teacherName = "Demo Teacher";
+  const date = new Date().toLocaleDateString("en-IN");
 
   const catalog = [
     {
@@ -180,8 +189,7 @@ async function seedStudyData() {
       title: "Database Management",
       subtitle: "Normalization & SQL",
       category: "DBMS",
-      description:
-        "Relational design, normal forms and SQL queries.",
+      description: "Relational design, normal forms and SQL queries.",
       status: "approved",
       teacherEmail,
       teacherName,
@@ -191,8 +199,7 @@ async function seedStudyData() {
       title: "React Development",
       subtitle: "Components & Hooks",
       category: "React",
-      description:
-        "Build interactive interfaces with React.",
+      description: "Build interactive interfaces with React.",
       status: "approved",
       teacherEmail,
       teacherName,
@@ -202,8 +209,7 @@ async function seedStudyData() {
       title: "Java Programming",
       subtitle: "OOP Concepts",
       category: "Java",
-      description:
-        "Classes, inheritance and polymorphism in Java.",
+      description: "Classes, inheritance and polymorphism in Java.",
       status: "approved",
       teacherEmail,
       teacherName,
@@ -213,8 +219,7 @@ async function seedStudyData() {
       title: "Machine Learning",
       subtitle: "Feature Engineering",
       category: "ML",
-      description:
-        "Supervised learning and model evaluation basics.",
+      description: "Supervised learning and model evaluation basics.",
       status: "approved",
       teacherEmail,
       teacherName,
@@ -222,30 +227,10 @@ async function seedStudyData() {
   ];
 
   const enrollments = [
-    {
-      id: 1,
-      email: "student@studyhub.com",
-      courseId: 1,
-      progress: 68,
-    },
-    {
-      id: 2,
-      email: "student@studyhub.com",
-      courseId: 2,
-      progress: 42,
-    },
-    {
-      id: 3,
-      email: "student@studyhub.com",
-      courseId: 3,
-      progress: 81,
-    },
-    {
-      id: 4,
-      email: "student@studyhub.com",
-      courseId: 4,
-      progress: 35,
-    },
+    { id: 1, email: "student@studyhub.com", courseId: 1, progress: 68 },
+    { id: 2, email: "student@studyhub.com", courseId: 2, progress: 42 },
+    { id: 3, email: "student@studyhub.com", courseId: 3, progress: 81 },
+    { id: 4, email: "student@studyhub.com", courseId: 4, progress: 35 },
   ];
 
   const library = [
@@ -258,7 +243,7 @@ async function seedStudyData() {
       courseId: 1,
       uploaderEmail: teacherEmail,
       uploaderName: teacherName,
-      date: new Date().toLocaleDateString("en-IN"),
+      date,
     },
     {
       id: 2,
@@ -269,7 +254,7 @@ async function seedStudyData() {
       courseId: 2,
       uploaderEmail: teacherEmail,
       uploaderName: teacherName,
-      date: new Date().toLocaleDateString("en-IN"),
+      date,
     },
     {
       id: 3,
@@ -280,7 +265,7 @@ async function seedStudyData() {
       courseId: 3,
       uploaderEmail: teacherEmail,
       uploaderName: teacherName,
-      date: new Date().toLocaleDateString("en-IN"),
+      date,
     },
   ];
 
@@ -315,27 +300,14 @@ async function seedStudyData() {
     ["enrollments", enrollments],
     ["library", library],
     ["quizzes", quizzes],
-    [
-      "system",
-      {
-        allowRegistration: true,
-        requireApproval: true,
-      },
-    ],
+    ["system", { allowRegistration: true, requireApproval: true }],
   ];
 
   for (const [resource, data] of global) {
-    const exists = await StudyData.exists({
-      resource,
-      ownerEmail: null,
-    });
+    const exists = await StudyData.exists({ resource, ownerEmail: null });
 
     if (!exists) {
-      await StudyData.create({
-        resource,
-        ownerEmail: null,
-        data,
-      });
+      await StudyData.create({ resource, ownerEmail: null, data });
     }
   }
 
@@ -343,26 +315,10 @@ async function seedStudyData() {
     [
       "tasks",
       [
-        {
-          id: 1,
-          text: "Review DBMS normalization",
-          done: true,
-        },
-        {
-          id: 2,
-          text: "Complete React hooks lesson",
-          done: false,
-        },
-        {
-          id: 3,
-          text: "Take today's practice quiz",
-          done: false,
-        },
-        {
-          id: 4,
-          text: "Review 10 flashcards",
-          done: false,
-        },
+        { id: 1, text: "Review DBMS normalization", done: true },
+        { id: 2, text: "Complete React hooks lesson", done: false },
+        { id: 3, text: "Take today's practice quiz", done: false },
+        { id: 4, text: "Review 10 flashcards", done: false },
       ],
     ],
     ["chat", []],
@@ -372,14 +328,13 @@ async function seedStudyData() {
       [
         {
           id: 1,
-          front: "What is 1NF?",
-          back:
-            "A relation with atomic values and no repeating groups.",
+          question: "What is 1NF?",
+          answer: "A relation with atomic values and no repeating groups.",
         },
         {
           id: 2,
-          front: "What is a React Hook?",
-          back:
+          question: "What is a React Hook?",
+          answer:
             "A function that lets React components use state and other features.",
         },
       ],
@@ -410,18 +365,10 @@ async function seedStudyData() {
         },
       ],
     ],
-    [
-      "settings",
-      {
-        notifications: true,
-        compactMode: false,
-      },
-    ],
+    ["settings", { notifications: true, compactMode: false }],
   ];
 
-  const studentExists = await User.exists({
-    email: "student@studyhub.com",
-  });
+  const studentExists = await User.exists({ email: "student@studyhub.com" });
 
   if (studentExists) {
     for (const [resource, data] of studentDefaults) {
@@ -453,15 +400,10 @@ async function start() {
     await seedStudyData();
 
     app.listen(PORT, () => {
-      console.log(
-        `Server running on http://localhost:${PORT}`
-      );
+      console.log(`Server running on port ${PORT}`);
     });
   } catch (error) {
-    console.error(
-      "Server startup aborted:",
-      error.message
-    );
+    console.error("Server startup aborted:", error.message);
 
     process.exit(1);
   }
