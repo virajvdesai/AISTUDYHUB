@@ -1884,13 +1884,11 @@ export function Planner() {
 </button>
         }
       />
-
-           {planError && (
-  <p role="alert" className="planner-error">
-    {planError}
-  </p>
-)}
-
+ {planError && (
+        <p role="alert" className="planner-error">
+          {planError}
+        </p>
+      )}
       <div className="planner-layout">
         <section className="app-card">
           <div className="card-head">
@@ -2307,11 +2305,6 @@ export function Settings() {
         title="Settings"
         text="Manage your profile, password and preferences."
       />
-      {planError && (
-  <p role="alert" className="planner-error">
-    {planError}
-  </p>
-)}
 
       <div className="settings-grid">
         <section className="app-card">
