@@ -1885,6 +1885,12 @@ export function Planner() {
         }
       />
 
+           {planError && (
+  <p role="alert" className="planner-error">
+    {planError}
+  </p>
+)}
+
       <div className="planner-layout">
         <section className="app-card">
           <div className="card-head">
