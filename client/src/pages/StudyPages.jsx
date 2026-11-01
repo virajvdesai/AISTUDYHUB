@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { EmptyState, Layout, PageIntro, Toggle } from "../components/Layout";
+import html2pdf from "html2pdf.js";
 import {
   ResponsiveContainer,
   BarChart,
@@ -680,17 +681,55 @@ export function PremiumCourseViewer() {
   const [searchParams] = useSearchParams();
   const courseId = searchParams.get("id");
 
-const downloadCertificate = () => {
-  const previousTitle = document.title;
+const downloadCertificate = async () => {
+  if (!certificateRef.current || downloading) return;
 
-  // Chrome uses the page title as the default PDF file name.
-  document.title = `AI-StudyHub-${course.title.replace(/[^a-z0-9]/gi, "-")}-Certificate`;
+  setDownloading(true);
 
-  window.print();
+  try {
+    const options = {
+      margin: 0,
+      filename: `AI-StudyHub-${course.title.replace(
+        /[^a-z0-9]/gi,
+        "-"
+      )}-Certificate.pdf`,
 
-  setTimeout(() => {
-    document.title = previousTitle;
-  }, 1000);
+      image: {
+        type: "jpeg",
+        quality: 1,
+      },
+
+      html2canvas: {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        scrollX: 0,
+        scrollY: 0,
+      },
+
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "landscape",
+      },
+
+      pagebreak: {
+        mode: ["avoid-all"],
+      },
+    };
+
+    await html2pdf()
+      .set(options)
+      .from(certificateRef.current)
+      .save();
+
+  } catch (error) {
+    console.error("Certificate PDF error:", error);
+    window.alert("Could not download certificate. Please try again.");
+  } finally {
+    setDownloading(false);
+  }
 };
 
   const courseInfo = {

@@ -436,7 +436,7 @@
 
 /* Print only the certificate, on exactly one landscape page */
 
-@page {
+/* @page {
   size: A4 landscape;
   margin: 0;
 }
@@ -449,7 +449,7 @@
     padding: 0;
     overflow: hidden;
     background: #fff;
-  }
+  } */
 
   /* make everything invisible, then show only the certificate */
   body * {
